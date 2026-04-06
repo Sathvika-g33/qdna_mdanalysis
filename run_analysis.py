@@ -1,6 +1,68 @@
 import MDAnalysis as mda
 import numpy as np
-import matplolib.pyplot as plt
+import matplotlib.pyplot as plt
+from pathlib import Path
+
+# ---- PLOTTING FUNCTIONS ----
+def plot_distance_vs_time(time, distance, output_dir=Path("outputs"), filename="distance_vs_time.png"):
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    plt.figure()
+    plt.plot(time, distance)
+    plt.xlabel("Time")
+    plt.ylabel("Distance")
+    plt.title("Distance vs Time")
+    plt.savefig(output_dir / filename)
+    plt.close()
+
+
+def plot_angle_vs_time(time, angle, output_dir=Path("outputs"), filename="angle_vs_time.png"):
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    plt.figure()
+    plt.plot(time, angle)
+    plt.xlabel("Time")
+    plt.ylabel("Angle")
+    plt.title("Angle vs Time")
+    plt.savefig(output_dir / filename)
+    plt.close()
+
+
+def plot_angle_vs_distance_heatmap(distance, angle, output_dir=Path("outputs"), filename="angle_vs_distance_heatmap.png", bins=100):
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    plt.figure()
+    plt.hist2d(distance, angle, bins=bins)
+    plt.xlabel("Distance")
+    plt.ylabel("Angle")
+    plt.title("Angle vs Distance Heatmap")
+    plt.savefig(output_dir / filename)
+    plt.close()
+
+# ---- DATA SAVING FUNCTIONS ----
+def save_analysis_csv(time, distance, angle, output_dir=Path("outputs"), filename="analysis_results.csv"):
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = output_dir / filename
+    header = "time,distance,angle\n"
+    with open(csv_path, "w") as csv_file:
+        csv_file.write(header)
+        for t, d, a in zip(time, distance, angle):
+            csv_file.write(f"{t},{d},{a}\n")
+    return csv_path
+
+
+def save_analysis_log(time, distance, angle, output_dir=Path("outputs"), filename="analysis_results.log"):
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    log_path = output_dir / filename
+    with open(log_path, "w") as log_file:
+        log_file.write("Analysis results\n")
+        log_file.write("time\tdistance\tangle\n")
+        for t, d, a in zip(time, distance, angle):
+            log_file.write(f"{t:.3f}\t{d:.3f}\t{a:.2f}\n")
+    return log_path
+
 # ---- LOAD FILE ----
 u = mda.Universe("")
 
@@ -47,32 +109,22 @@ print("Analysis Done.")
 runtime = np.array(alltime)
 bonddistances = np.array(distance)
 bondangles = np.array(allangles)
+
 #----PLOTTING THE GRAPHS -----
+output_dir = Path("outputs")
+output_dir.mkdir(parents=True, exist_ok=True)
+
 #--- Dist VS Time -----
-plt.figure()
-plt.plot(runtime, bonddistances)
-plt.xlabel("Time")
-plt.ylabel("Distance")
-plt.title("Distance vs Time")
-plt.savefig("distance_vs_time.png")
-plt.close()
+plot_distance_vs_time(runtime, bonddistances, output_dir=output_dir)
 
 #--- Angle VS Time -----
-plt.figure()
-plt.plot(runtime, bondangles)
-plt.xlabel("Time")
-plt.ylabel("Angle")
-plt.title("Angle vs Time")
-plt.savefig("angle_vs_time.png")
-plt.close()
+plot_angle_vs_time(runtime, bondangles, output_dir=output_dir)
 
 #--- 2D heat map Angle VS Distance -----
-plt.figure()
-plt.hist2d(bonddistances, bondangles, bins = 100)
-plt.xlabel("Distance")
-plt.ylabel("Angle")
-plt.title("Angle vs Distance Heatmap")
-plt.savefig("angle_vs_distance_heatmap.png")
-plt.close()
+plot_angle_vs_distance_heatmap(bonddistances, bondangles, output_dir=output_dir)
 
-Print("Analysis and plotting complete.")
+#--- Save analysis data -----
+save_analysis_csv(runtime, bonddistances, bondangles, output_dir=output_dir)
+save_analysis_log(runtime, bonddistances, bondangles, output_dir=output_dir)
+
+print("Analysis and plotting complete.")
